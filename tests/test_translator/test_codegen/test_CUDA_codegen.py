@@ -20223,3 +20223,21 @@ def test_fixed_width_integers_include_cstdint(tmp_path):
     assert "uint16_t" in cuda_code
     assert "uint8_t" in cuda_code
     compile_cuda_if_nvcc_available(cuda_code, tmp_path)
+
+
+def test_int64_and_uint64_map_to_cuda_64_bit_integers():
+    source_code = """
+    shader Wide {
+        uint64 widen(uint64 value, int64 signed_value) {
+            int64 s = int64(signed_value);
+            uint64 v = uint64(value);
+            return v;
+        }
+    }
+    """
+    cuda_code = CudaCodeGen().generate(Parser(Lexer(source_code).tokens).parse())
+
+    assert "long long s = static_cast<long long>(signed_value);" in cuda_code
+    assert "unsigned long long v = static_cast<unsigned long long>(value);" in cuda_code
+    assert " int64 " not in cuda_code
+    assert " uint64 " not in cuda_code

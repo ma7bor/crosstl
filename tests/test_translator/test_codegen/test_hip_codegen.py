@@ -14321,3 +14321,23 @@ def test_hip_half_vector_constructor_splats_a_half_cast():
 
     assert "return cgl_cgl_half3_splat(__float2half(x));" in hip_code
     assert "cgl_make_half3(__float2half(x))" not in hip_code
+
+
+def test_int64_and_uint64_map_to_hip_64_bit_integers():
+    source_code = """
+    shader Wide {
+        uint64 widen(uint64 value, int64 signed_value) {
+            int64 s = int64(signed_value);
+            uint64 v = uint64(value);
+            return v;
+        }
+    }
+    """
+    hip_code = HipCodeGen().generate(Parser(Lexer(source_code).tokens).parse())
+
+    assert "long long s = static_cast<long long>(signed_value);" in hip_code
+    assert "unsigned long long v = static_cast<unsigned long long>(value);" in (
+        hip_code
+    )
+    assert " int64 " not in hip_code
+    assert " uint64 " not in hip_code
